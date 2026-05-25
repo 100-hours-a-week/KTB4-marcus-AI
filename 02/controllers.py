@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from datetime import datetime
 import models
 import re
+import httpx
+import json
 
 EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.com$")
 PWD_PATTERN = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[\~\!\@\#\$\%\^\&\*\|\'\"\;\:\₩\\\?]).{8,20}$")
@@ -16,37 +18,36 @@ class PasswordAgainError(Exception): pass
 class EmptyComment(Exception): pass
 class PostNamePatternError(Exception): pass
 class EmptyPost(Exception): pass
+class AIBadCodeError(Exception): pass
+class AIOfflineError(Exception): pass
 
-def login_controller(user_id: str, pwd: str, cur_user):
-    if not EMAIL_PATTERN.match(user_id):
-        raise EmailPatternError()
-    
+def login_checker(data: models.UserCheck, cur_user):
     res_user = cur_user.execute("SELECT ID, pwd, nickName FROM users \
-    WHERE ID=? AND pwd=?", (user_id, pwd))
+    WHERE ID=? AND pwd=?", (data.user_id, data.pwd))
     user_data = res_user.fetchone()
 
     if user_data is None:
         raise IDPasswordIncorrectError()
     
-    return {"user_id": user_id, "nickName": user_data[2]}
+    return user_data
 
-def signup_controller(user_id: str, pwd: str, pwd_again: str, nickName: str, cur_user):
-    if not EMAIL_PATTERN.match(user_id):
+def signup_controller(data: models.UserCheck, pwd_again: str, nickName: str, cur_user):
+    if not EMAIL_PATTERN.match(data.user_id):
         raise EmailPatternError()
     
-    res_user = cur_user.execute("SELECT ID FROM users WHERE ID=?", (user_id,))
+    res_user = cur_user.execute("SELECT ID FROM users WHERE ID=?", (data.user_id,))
 
     if res_user.fetchone() is not None:
 	    raise IDAlreadyExists()
 
-    if not PWD_PATTERN.match(pwd):
+    if not PWD_PATTERN.match(data.pwd):
 	    raise PasswordPatternError()
     
-    if pwd != pwd_again:
+    if data.pwd != pwd_again:
         raise PasswordAgainError()
     
     cur_user.execute("INSERT INTO users (ID, pwd, nickName) \
-    VALUES (?, ?, ?)", (user_id, pwd, nickName))
+    VALUES (?, ?, ?)", (data.user_id, data.pwd, nickName))
 
     return {"message": "회원가입 성공"}
 
@@ -58,7 +59,7 @@ def post_outside_controller(page_num: int, cur_post):
     comments, views, date, post_num FROM posts \
     ORDER BY post_num DESC LIMIT ?, 10", (pass_num,))
 
-    visible_posts = res.fetchall()
+    visible_posts = res_post.fetchall()
 
     posts_list = []
 
@@ -119,14 +120,12 @@ def post_inside_controller(post_num: int, cur_post, cur_comment):
 def like_controller(post_num: int, cur_post):
     cur_post.execute("UPDATE posts SET likes = likes + 1 \
     WHERE post_num = ?", (post_num,))
-    con_post.commit()
 
-    res_post = cur_post.execute("SELECT likes FROM posts WHERE post_num=?", (post_num,))
-    likes_data = res_post.fetchone()
+    return {"message": "좋아요 성공!"}
 
-    return {"likes": likes_data[0]}
-
-def comment_controller(data: models.CommentCreate, post_num: int, cur_comment):
+def comment_controller(data: models.CommentCreate, post_num: int, cur_user, cur_comment):
+    login_checker(data.check, cur_user)
+    
     if not data.content:
         raise EmptyComment()
     
@@ -134,12 +133,68 @@ def comment_controller(data: models.CommentCreate, post_num: int, cur_comment):
     formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")
 
     cur_comment.execute("INSERT INTO comments(ID, nickName, \
-    content, likes, date), VALUES (?, ?, ?, 0, ?, ?)", \
-    (data.user_id, data.nickName, data.content, formatted_date, post_num))
+    content, likes, date, post_num) VALUES (?, ?, ?, ?, ?, ?)", \
+    (data.check.user_id, data.nickName, data.content, 0, formatted_date, post_num))
 
-    return None
+    return {"message": "댓글 성공!"}
 
-def publish_controller(data: models.PostCreate, cur_post):
+def summary_controller(post_num: int, cur_post):
+    res_post = cur_post.execute("SELECT content FROM posts WHERE post_num=?", (post_num,))
+    content = res_post.fetchone()[0]
+
+    url = "http://localhost:11434/v1/chat/completions"
+
+    headers = {
+	"Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "gemma4:e4b",
+        "messages": [
+            {
+                "role": "system",
+                "content": "당신은 커뮤니티에 올라오는 글을 한 문장에서 두 문장으로 정리해주는 전문가입니다. \
+                유저의 본문을 핵심을 요약하여 한국어로 한 문장으로 정리해주세요."
+            },
+            {
+                "role": "user",
+                "content": content
+            }
+        ],
+        "stream": False
+    }
+
+    try:
+        response = httpx.post(url, json=payload, headers=headers, timeout=60.0)
+
+        if response.status_code != 200:
+            raise AIBadCodeError()
+
+        return {"summary": response.json()["choices"][0]["message"]["content"]}
+
+    except Exception:
+        raise AIOfflineError()
+
+def revise_controller(data: models.PostCreate, post_num: int, cur_user, cur_post):
+    login_checker(data.check, cur_user)
+
+    if len(data.title) > 20:
+        raise PostNamePatternError()
+    if not data.title or not data.content:
+        raise EmptyPost()
+    
+    cur_post.execute("UPDATE posts SET title = ?, content = ? \
+    WHERE post_num = ?", (data.title, data.content, post_num))
+
+    return {"message": "게시글 수정 성공!"}
+
+def delete_controller(data: models.UserCheck, post_num: int, cur_user, cur_post):
+    login_checker(data, cur_user)
+    cur_post.execute("DELETE FROM posts WHERE post_num = ?", (post_num,))
+    return {"message": "게시글 삭제 성공!"}
+
+def publish_controller(data: models.PostCreate, cur_user, cur_post):
+    login_checker(data.check, cur_user)
     if len(data.title) > 20:
         raise PostNamePatternError()
     if not data.title or not data.content:
@@ -149,8 +204,8 @@ def publish_controller(data: models.PostCreate, cur_post):
     formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")
 
     cur_post.execute("INSERT INTO posts (ID, nickName, title, content, \
-    likes, comments, views, date), \
-    VALUES (?, ?, ?, ?, 0, 0, 0, ?)", \
-    (data.user_id, data.nickName, data.title, data.content, formatted_date))
+    likes, comments, views, date) \
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)", \
+    (data.check.user_id, data.nickName, data.title, data.content, 0, 0, 0, formatted_date))
 
-    return None
+    return {"message": "포스트 작성 성공!"}
