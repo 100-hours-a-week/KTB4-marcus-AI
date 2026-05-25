@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, APIRouter
 import sqlite3
 import controllers
+import models
 
 router = APIRouter(prefix="/login", tags=["login"])
 
@@ -8,31 +9,14 @@ con_user = sqlite3.connect("users.db")
 cur_user = con_user.cursor()
 cur_user.execute("CREATE TABLE IF NOT EXISTS users(ID, pwd, nickName)")
 
-@router.post("/")
-async def login(user_id: str, pwd: str):
+@router.post("/signup")
+async def signup(data: models.UserCheck, pwd_again: str, nickName: str):
+	global cur_user
 	try:
-		result = controllers.login_controller(user_id, pwd, cur_user)
+		result = controllers.signup_controller(data, pwd_again, nickName, cur_user)
 		con_user.commit()
 		return result
-
-	except controllers.EmailPatternError:
-		raise HTTPException(
-			status_code=400,
-			detail="올바른 이메일 주소 형식을 입력해주세요. \
-			(예: example\@example.com)"
-		)
 	
-	except controllers.IDPasswordIncorrectError:
-		raise HTTPException(
-			status_code=404,
-			detail="아이디 또는 비밀번호가 잘못되었습니다"
-		)
-
-@router.post("/signup")
-async def signup(user_id: str, pwd: str, pwd_again: str, nickName: str):
-	try:
-		return controllers.signup_controller(user_id, pwd, pwd_again, nickName, cur_user)
-
 	except controllers.EmailPatternError:
 		raise HTTPException(
 			status_code=400,
