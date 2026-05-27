@@ -12,7 +12,7 @@ app.include_router(login_router)
 ```  
 FastAPI 객체를 만들고, router를 잇는다!  
   
-(nbsp;)  
+&nbsp;
 # (2) models.py  
   
 ```python  
@@ -35,7 +35,7 @@ class CommentCreate(BaseModel): # 댓글 작성 시 정보
 ```  
 BaseModel로 정의된 애들 여기에 집어넣는다!  
   
-(nbsp;)  
+&nbsp;
 # (3) login.py, post.py  
   
 ```python  
@@ -86,7 +86,7 @@ async def post_inside(post_num: int):
 `commit()` 명령어를 넣어야 DB에 반영할 수 있었고,  
 `global`로 호출하지 않으면 제대로 변수를 못 찾는 문제가 있었다  
   
-(nbsp;)  
+&nbsp;
 # (4) controllers.py  
   
 ## def1. login_checker  
@@ -261,7 +261,7 @@ LLM의 말로는 이러면 치명적인 오류가 생길 수 있다고 한다
 <img width="662" height="292" alt="스크린샷 2026-05-25 오후 11 18 10" src="https://github.com/user-attachments/assets/59bdbd83-c3c6-42d9-862d-3638bdc5b4e5" />
 
   
-(nbsp;)  
+&nbsp;
 ## def7. summary_controller  
   
 >게시물 요약 과정이 실질적으로 담겨있는 함수다  
@@ -295,7 +295,7 @@ httpx로부터 답변을 못 받는 방식이 너무 많아서
 <img width="680" height="315" alt="스크린샷 2026-05-25 오후 11 35 30" src="https://github.com/user-attachments/assets/74073b4b-23d3-4d92-809b-7ee32cc427bb" />
 
   
-(nbsp;)  
+&nbsp;
 ## def8. revise_controller  
   
 >게시물 수정 과정이 실질적으로 담겨있는 함수다  
@@ -320,7 +320,7 @@ httpx로부터 답변을 못 받는 방식이 너무 많아서
 <img width="679" height="270" alt="스크린샷 2026-05-25 오후 11 20 29" src="https://github.com/user-attachments/assets/677b152e-9861-4767-b74d-dfdf11d7ccfd" />
 
   
-(nbsp;)  
+&nbsp;
   
 ## def9. delete controller  
   
@@ -347,7 +347,7 @@ httpx로부터 답변을 못 받는 방식이 너무 많아서
 <img width="676" height="292" alt="스크린샷 2026-05-25 오후 11 36 50" src="https://github.com/user-attachments/assets/34f9c90f-c7dd-4085-bb9a-41e0487529cd" />
 
   
-(nbsp;)  
+&nbsp;
 ## def10. publish_controller  
   
 >게시물 생성 과정이 실질적으로 담겨있는 함수다  
