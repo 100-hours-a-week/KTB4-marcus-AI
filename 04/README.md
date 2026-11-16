@@ -31,7 +31,8 @@ df = pd.DataFrame(data)  # 데이터프레임 생성
 
 그림으로는 다음과 같다
 
-!스크린샷 2026-06-10 오후 4.06.16.png
+<img width="573" height="566" alt="스크린샷 2026-06-10 오후 4 06 16" src="https://github.com/user-attachments/assets/91552320-4af6-4142-aaad-f4d5bfe4250c" />
+
 
 `cantor_calculator` 함수를 만들어 재귀적으로 `depth`를 구해
 
@@ -87,7 +88,7 @@ x좌표와 y좌표에 약간의 정규분포를 가미해 점의 좌표를 틀�
 
 더 이상 이런걸 격자라고 할 수는 없을 것이다.
 
-!스크린샷 2026-06-10 오후 4.07.47.png
+<img width="562" height="571" alt="스크린샷 2026-06-10 오후 4 07 47" src="https://github.com/user-attachments/assets/0a9cb083-5b42-4378-b800-fb6976c4ba89" />
 
 물론 이런 Dataset을 한다고 큰 차이가 있을 것 같진 않았다.
 
@@ -128,7 +129,7 @@ NB 테스트 데이터 정확도: 0.5367
 
 MLP를 쓴 것도 아니라 class가 없어 sigmoid의 성질을 이용해 직접 미분을 진행했다.
 
-!스크린샷 2026-06-10 오후 4.22.55.png
+<img width="527" height="558" alt="스크린샷 2026-06-10 오후 4 22 55" src="https://github.com/user-attachments/assets/60e9872d-27b9-4af8-a1e8-7f83540aadd5" />
 
 역시 활성화 함수 하나 만으로는 유의미한 값의 구분을 하기는 힘들었다
 
@@ -163,7 +164,7 @@ MLP 테스트 데이터 정확도: 0.6599
 
 ReLU 중심으로 넣었는데 활성화 함수를 더 잘 넣었다면 될지는 모르겠다
 
-!스크린샷 2026-06-10 오후 4.34.23.png
+<img width="517" height="562" alt="스크린샷 2026-06-10 오후 4 34 23" src="https://github.com/user-attachments/assets/b8aa55b8-9db0-4bf2-80fa-a5f93bd9e219" />
 
 그림도 뭔가 이쁘장하게 생겼다.
 
@@ -201,7 +202,7 @@ train/test로 분할하여 학습 및 검증을 실행했다.
 
 임의의 칸토어 데이터의 `[:, :, :, 2]`를 시각화 하면 아래와 같다.
 
-!스크린샷 2026-06-10 오후 4.44.57.png
+<img width="529" height="563" alt="스크린샷 2026-06-10 오후 4 44 57" src="https://github.com/user-attachments/assets/b74756c0-f605-4896-a497-8182e31dc4c7" />
 
 다만 큰 문제가 있었는데, **조건이 너무 쉬웠단 것이다!**
 
